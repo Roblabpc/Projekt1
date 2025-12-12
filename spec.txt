@@ -1,0 +1,721 @@
+MENU:
+
+Plik → Konfiguracja
+
+Konfiguracja → Analiza
+
+Konfiguracja → Kompilator
+
+Uruchom → Debuger
+
+MODUŁY / FORMULARZE:
+
+FMT-FRM-001 – Konfiguracja Formattera
+
+FMT-FRM-002 – Reguły Formattera
+
+FMT-FRM-003 – Zaawansowane (formatter_names)
+
+FMT-FRM-004 – Mapowania Formattera
+
+PAR-FRM-001 – Konfiguracja Parsera
+
+Moduł: Kompilator (Konfiguracja Kompilatora)
+
+Moduł: Debuger (DBG-FRM-001)
+
+Integracja z MZZ w tych elementach
+
+Na końcu dodam drzewo zależności unitów i drzewo zależności procedur (logiczne, projektowe – do późniejszej implementacji w Pascalu).
+
+I. SPECYFIKACJA MENU
+I.1. MENU: Plik → Konfiguracja
+1. Struktura menu
+
+1.1 Pełne drzewo menu (fragment PLIK)
+
+Plik
+ ├─ Nowy
+ ├─ Otwórz...
+ ├─ Zapisz
+ ├─ Zapisz jako...
+ ├─ Zamknij plik
+ ├─ ───────────────────────── (separator)
+ ├─ Konfiguracja
+ │    ├─ Ogólne
+ │    ├─ Analiza
+ │    │    ├─ Ustawienia Parsera
+ │    │    ├─ Ustawienia AST
+ │    │    ├─ Ustawienia LogicCheckera
+ │    │    ├─ Ustawienia EdgeCase
+ │    │    ├─ Ustawienia Formattera
+ │    │    │    ├─ FMT-FRM-001 – Konfiguracja Formattera
+ │    │    │    ├─ FMT-FRM-002 – Reguly Formattera
+ │    │    │    ├─ FMT-FRM-003 – Zaawansowane (NAMES)
+ │    │    │    └─ FMT-FRM-004 – Mapowania MAPXXX
+ │    ├─ Agent AI lokalny
+ │    ├─ Agent AI online
+ │    ├─ Kompilator
+ │    └─ Reset do wartości domyślnych
+ ├─ Pomoc
+ └─ Wyjście
+
+
+1.2 Hierarchia, podmenu, podgrupy
+
+Konfiguracja – podmenu w Plik
+
+W bieżącym czacie szczegółowo opisujemy:
+
+Konfiguracja → Analiza → Ustawienia Formattera
+
+Konfiguracja → Analiza → Ustawienia Parsera
+
+Konfiguracja → Kompilator
+
+1.3 Stany pozycji
+
+Pozycje Konfiguracji są:
+
+Aktywne, gdy:
+
+jest otwarty projekt lub edytor (wg globalnych zasad)
+
+Nieaktywne (Disabled), gdy:
+
+brak uprawnień do zapisu konfiguracji
+
+brak dostępu do plików konfiguracyjnych (błąd IO)
+
+Zablokowane (Locked) – nie dotyczy pozycji menu, dotyczy reguł wewnątrz formularzy.
+Pozycje menu nie mają trybu „zablokowana”, więc:
+
+„Pozycja nie posiada stanu zablokowana – tylko aktywna/nieaktywna.”
+
+1.4 Warunki aktywacji
+
+Konfiguracja:
+
+aktywna zawsze, gdy aplikacja jest w stanie gotowości (po pełnym starcie)
+
+nieaktywna w trakcie:
+
+krytycznego błędu inicjalizacji
+
+wykonywania nieprzerywalnej operacji globalnej (np. migracja konfiguracji)
+
+1.5 Powiązania z modułami projektu
+
+Konfiguracja wywołuje różne formularze:
+
+Analiza → Ustawienia Formattera → moduł uFormatterConfig, uFormatterRules, uFormatterNames, uFormatterMapRules.
+
+Analiza → Ustawienia Parsera → moduł uParserConfig.
+
+Kompilator → moduł uCompilerConfig.
+
+Komunikacja z MZZ:
+
+część formularzy (Formatter, Parser, Kompilator) odczytuje Status MZZ.
+
+1.6 Pozycje bez podmenu
+
+Ogólne, Agent AI lokalny, Agent AI online, Kompilator, Reset do wartości domyślnych:
+
+„Pozycja nie posiada podmenu.”
+
+1.7 Pozycja bez powiązań z modułami
+
+W tym projekcie każda pozycja konfiguracji ma powiązanie z modułami (formularzami).
+Brak pozycji, która byłaby w 100% „martwa”.
+
+I.2. MENU: Uruchom → Debuger
+1. Struktura
+Uruchom
+ ├─ Uruchom
+ ├─ Kompiluj
+ ├─ Buduj
+ ├─ Make
+ └─ Debuger
+
+
+Pozycja Debuger:
+
+Pozycja nie posiada podmenu.
+
+Po kliknięciu otwiera formularz DBG-FRM-001 (TFormDebuggerMain).
+
+Stany:
+
+Aktywna, gdy:
+
+istnieje aktualny projekt
+
+skonfigurowany jest Kompilator i ścieżka do debugera
+
+Nieaktywna, gdy:
+
+brak projektu
+
+brak debugera (pole „Ścieżka do debugera” puste lub błąd walidacji)
+
+„Pozycja nie posiada stanu zablokowana.”
+
+Powiązania z modułami:
+
+Moduł uDebuggerMain
+
+Moduł uCompilerConfig (czy debug build jest aktywny)
+
+Moduł uMZZ (zdarzenia debuggera, status)
+
+II. FORMULARZE TWORZONE PRZEZ MENU
+
+Skupiamy się na formularzach wymienionych w tym czacie.
+
+II.1. Lista formularzy (z ID)
+
+FMT-FRM-001 – TFormFormatterConfig – Konfiguracja Formattera
+
+FMT-FRM-002 – TFormFormatterRules – Reguły Formattera (RULEFXXX)
+
+FMT-FRM-003 – TFormFormatterNames – Zaawansowane (formatter_names.conf)
+
+FMT-FRM-004 – TFormFormatterMapRules – Mapowania MAPXXX
+
+PAR-FRM-001 – TFormParserConfig – Konfiguracja Parsera (pliki .map + MZZ)
+
+CMP-FRM-001 – TFormCompilerConfig – Konfiguracja Kompilatora (FPC, MAKE, debuger) – nazwa umowna, ale spójna
+
+DBG-FRM-001 – TFormDebuggerMain – główny formularz debugera
+
+II.2 Typ formularzy
+
+Wszystkie powyższe: modalne formularze konfiguracji / narzędzi.
+
+DBG-FRM-001 może być modalny lub dokowany – przyjmijmy: niemodalny, aby pracować równolegle z edytorem.
+
+II.3 Layout + pola (krótkie przypomnienie, szczegóły mamy już ustalone)
+1) FMT-FRM-001 – Konfiguracja Formattera
+
+Typ: modalny, panel konfiguracji.
+
+Layout: prosty układ pionowy (lista opcji) + dolny panel przycisków.
+
+Kluczowe pola (z tego czatu):
+
+CheckboxFormatComments
+
+CheckboxFormatAILock
+
+CheckboxAllowMZZ (Zezwalaj na pracę z MZZ)
+
+SpinIndentSize (1..12)
+
+SpinMaxLineLength (40..300)
+
+CheckSeparateSections
+
+CheckAlignComments
+
+SpinMaxIterations (1..20)
+
+CheckAskMZZOnError
+
+CheckCommunicationMZZ (Komunikacja z MZZ: [ ])
+
+LabelMZZStatus – ● aktywny / nieaktywny / oczekuje (tylko odczyt)
+
+ButtonRules → otwiera FMT-FRM-002
+
+ButtonMapping → otwiera FMT-FRM-004
+
+[Zapisz], [Anuluj], [Przywróć domyślne]
+
+2) FMT-FRM-002 – Reguły Formattera
+
+Lista reguł RULEFxxx
+
+Edycja, dodawanie, usuwanie, blokada (Locked)
+
+Przycisk Zaawansowane → FMT-FRM-003
+
+3) FMT-FRM-003 – Zaawansowane (NAMES)
+
+Edycja list „IfFind” i „Actions”
+
+Plik formatter_names.conf
+
+4) FMT-FRM-004 – Mapowania MAPXXX
+
+Lista mapowań MAPxxx dla formattera
+
+Plik formatter_map_rules.conf
+
+5) PAR-FRM-001 – Konfiguracja Parsera
+
+5 pól ścieżek:
+
+parser_keywords.map
+
+parser_operators.map
+
+parser_grammar.map
+
+parser_tokens.map
+
+parser_ast.map
+
+CheckAllowMZZ (Komunikacja z MZZ)
+
+LabelMZZStatus (● / nieaktywny / oczekuje)
+
+[Zapisz], [Anuluj]
+
+6) CMP-FRM-001 – Konfiguracja Kompilatora (z tego czatu)
+
+Ścieżka do FPC
+
+Ścieżka do fpc.cfg
+
+Parametry kompilacji
+
+Tryb kompilacji (Normalny / Pełna przebudowa / Debug)
+
+Ścieżka do MAKE
+
+Ścieżka do FCMKAE
+
+Flagi MAKE
+
+Flagi FPC
+
+Architektura docelowa
+
+Log błędów / okno logów
+
+Nowe: Ścieżka do debugera, Flagi debugera
+
+7) DBG-FRM-001 – Debuger
+
+Layout: panel główny + listy + przyciski
+
+Zawiera:
+
+Lista modułów / funkcji
+
+Lista zmiennych (watch)
+
+Lista breakpointów
+
+Przyciski: Start, Stop, Kontynuuj, Restart
+
+Przyciski otwierające podrzędne widoki (stos, pamięć, rejestry, timer)
+
+II.4 Reakcje formularzy na zdarzenia i moduły
+
+Wspólny wzór:
+
+OnShow:
+
+ładowanie danych z pliku / globalnego configu
+
+pobranie Status MZZ (dla Formattera i Parsera)
+
+OnClick[Zapisz]:
+
+walidacja pól
+
+zapis do pliku lub globalnego configu
+
+zgłoszenie do MZZ (jeśli wymagane)
+
+OnClick[Anuluj]:
+
+zamknięcie bez zapisu
+
+OnClick[Reguły… / Zaawansowane / Mapowania]:
+
+zamyka/ukrywa bieżący formularz lub pozostawia otwarty i otwiera inny modal/niemodal.
+
+Synchronizacja:
+
+Jednostronna z plikami (OnOpen → odczyt, OnSave → zapis)
+
+Z MZZ: odczyt statusu + ewentualna rejestracja zmiany ustawień.
+
+II.5 Dane wejściowe, walidacja, błędy (dla formularzy ogólnie)
+
+Typ: głównie string, Boolean, Integer.
+
+Źródło: pliki konfiguracyjne (editor_config.json, formatter_rule.conf, .map, .conf) lub MZZ.
+
+Walidacja:
+
+ścieżki plików → FileExists
+
+zakresy liczb → SpinEdit ograniczenia + dodatkowa walidacja przy zapisie
+
+Błędy:
+
+Nieistniejący plik: komunikat użytkownikowi + brak zapisu
+
+Błąd I/O: log do systemu logów + komunikat
+
+Błąd MZZ: status „nieaktywny/oczekuje”, nie blokuje konfiguracji
+
+III. PLIKI WYKORZYSTYWANE PRZEZ MENU / MODUŁY
+III.1 Lista plików
+
+editor_config.json – globalna konfiguracja edytora (m.in. ustawienia Formattera, Parsera, Kompilatora)
+
+formatter_rule.conf – reguły RULEFxxx
+
+formatter_names.conf – listy IfFind / Actions
+
+formatter_map_rules.conf – mapowania MAPxxx
+
+parser_keywords.map
+
+parser_operators.map
+
+parser_grammar.map
+
+parser_tokens.map
+
+parser_ast.map
+
+Pliki logów kompilatora, debugera (np. logs/compiler_log.txt, logs/debugger_log.txt)
+
+Żadne inne pliki nie są używane przez elementy z tego czatu.
+Inne pozycje menu mogą, ale są poza zakresem bieżącej specyfikacji.
+
+III.2 Typy plików i struktury
+
+editor_config.json – JSON:
+
+sekcje: Formatter, Parser, Compiler, Debugger, MZZ itd.
+
+.conf – INI-like (proste sekcje + pary klucz=wartość)
+
+.map – format roboczy, może być:
+
+DSL gramatyki (parser_grammar.map)
+
+słowniki (keywords, operators, tokens, ast)
+
+Jeśli jakieś menu nie używa plików:
+
+Np. Plik → Pomoc – „To menu nie uzywa plikow.”
+
+III.3 Bezpieczeństwo plików
+
+Zapis atomiczny:
+
+zapis do pliku tymczasowego: nazwa.tmp
+
+po sukcesie: zamiana .tmp → docelowy plik
+
+Backup:
+
+kopia .bak przed nadpisaniem
+
+Rollback:
+
+w razie błędu przy zapisie: przywrócenie .bak
+
+IV. PRZEPŁYWY INFORMACJI I KOMUNIKATÓW
+
+Skupione na:
+
+menu → formularz
+
+formularz → plik
+
+formularz → MZZ
+
+formularz → moduł (Formatter, Parser, Kompilator, Debuger)
+
+IV.1 Kto inicjuje?
+
+Użytkownik (kliknięcie w menu)
+
+Moduł (np. MZZ może zainicjować reload konfiguracji)
+
+IV.2 Co jest wysyłane?
+
+Przykład: FMT-FRM-001 → moduł Formatter:
+
+TFormatterConfig (record) – referencja lub kopia.
+
+PAR-FRM-001 → Parser:
+
+TParserConfig – ścieżki plików + flaga AllowMZZIntegration.
+
+Kompilator Config → Kompilator:
+
+TCompilerConfig – ścieżki, flagi, tryby.
+
+Debuger → MZZ:
+
+zdarzenia typu: StartDebug, StopDebug, BreakpointHit, VariableChanged.
+
+IV.3 Format danych
+
+rekordy jako struktury Pascal (przekazywane w pamięci)
+
+ścieżki jako string UTF-8
+
+status MZZ jako wyliczenie:
+
+TMZZStatus = (mzzInactive, mzzActive, mzzWaiting);
+
+IV.4 Reakcja na błędy
+
+Błędy I/O → komunikat + log + brak zapisu
+
+Błędy MZZ (brak odpowiedzi) → ustawienie statusu „nieaktywny/oczekuje” i kontynuacja pracy w trybie offline
+
+Brak plików .map → Parser będzie uznany za nieskonfigurowany
+
+V. DZIAŁANIE KAŻDEJ POZYCJI MENU (SKRÓT – DLA TEGO CZATU)
+Plik → Konfiguracja → Analiza → Ustawienia Formattera
+
+Kroki:
+
+Utworzenie/wyświetlenie FMT-FRM-001
+
+Odczyt editor_config.json (sekcja Formatter)
+
+Odczyt statusu MZZ dla modułu Formattera
+
+Po Zapisz:
+
+walidacja
+
+zapis do config
+
+zgłoszenie do MZZ (opcja: zmiana konfiguracji Formattera)
+
+Wątki: brak osobnych – formularz działa w wątku UI.
+
+AI: „Ta pozycja menu nie wysyla danych bezposrednio do AI.” (AI działa później, korzystając z konfiguracji.)
+
+Moduły zewnętrzne:
+
+MZZ, Formatter.
+
+Analogicznie opisują się:
+
+Analiza → Ustawienia Parsera
+
+Konfiguracja → Kompilator
+
+Uruchom → Debuger
+
+Żadna z tych pozycji bezpośrednio nie wysyła kodu użytkownika do AI – to robią dopiero moduły analizy/AI.
+
+VI. ZMIENNE I STRUKTURY DANYCH (WSPÓLNE)
+VI.1 Globalne
+
+GFormatterConfig: TFormatterConfig;
+
+GParserConfig: TParserConfig;
+
+GCompilerConfig: TCompilerConfig;
+
+GMZZStatus: TMZZStatus;
+
+VI.2 Lokalne
+
+w każdym formularzu: lokalne kopie konfiguracji do edycji + flagi „czystości” (dirty flag).
+
+VI.3 Rekordy
+
+TFormatterConfig
+
+TParserConfig
+
+TCompilerConfig
+
+VI.4 Klasy
+
+TFormFormatterConfig, TFormFormatterRules, TFormFormatterNames, TFormFormatterMapRules
+
+TFormParserConfig
+
+TFormCompilerConfig
+
+TFormDebuggerMain
+
+VI.5 Wyliczenia
+
+TMZZStatus
+
+ewentualne TBuildMode (Normal, Rebuild, Debug)
+
+Jeśli jakiś typ nie jest używany w danej sekcji →
+
+„Ta sekcja nie posiada zmiennych tego typu.”
+
+VII. SCENARIUSZE BŁĘDÓW I EDGE CASE
+
+Przykłady:
+
+Plik formatter_rule.conf uszkodzony:
+
+Reguły nie są ładowane, wyświetlany komunikat, log, możliwość naprawy.
+
+Brak parser_grammar.map:
+
+Parser zgłasza błąd inicjalizacji – MZZ oznacza Parser jako nieaktywny.
+
+Brak debugera:
+
+Pozycja Uruchom → Debuger jest nieaktywna lub zgłasza błąd przy próbie uruchomienia.
+
+„Jeśli element nie odwołuje się do modułów zewnętrznych” – nie dotyczy tutaj, bo wszystkie powiązane.
+
+VIII. INTEGRACJA Z AI
+
+Dla elementów z tego czatu:
+
+Formularze konfiguracji nie korzystają bezpośrednio z AI – więc:
+
+„To menu nie korzysta z AI.”
+„Ten modul nie korzysta bezposrednio z AI.”
+
+AI działa na późniejszym etapie (analiza kodu przez Formatter/Parser/LogicChecker), ale to jest poza zakresem bieżącego czatu.
+
+IX. WORKFLOW MENU (dla konfiguracji + debugera)
+
+Użytkownik wybiera menu (Konfiguracja / Uruchom → Debuger).
+
+Aplikacja otwiera odpowiedni formularz.
+
+Formularz odczytuje konfigurację z plików i MZZ.
+
+Użytkownik wprowadza zmiany, zapisuje lub anuluje.
+
+W przypadku debugera:
+
+debuger wywołuje kompilator (tryb debug),
+
+uruchamia proces debugera z ustawioną ścieżką i flagami,
+
+komunikuje się z MZZ.
+
+X. SPECYFIKACJA MODUŁÓW (SKRÓTOWO WG TWOJEGO SZABLONU)
+
+Żeby nie pisać książki na 200 stron w jednym poście, zrobię dla każdego modułu zwięzły, ale kompletny opis wg kluczowych punktów:
+
+X.1 Moduł uFormatterConfig (FMT-FRM-001)
+
+Funkcje publiczne:
+
+LoadFormatterConfig(var AConfig: TFormatterConfig): Boolean;
+
+SaveFormatterConfig(const AConfig: TFormatterConfig): Boolean;
+
+UI: TFormFormatterConfig (opisany wyżej).
+
+Pliki: editor_config.json.
+
+Przepływy:
+
+menu → formularz → plik → moduł Formatter → MZZ.
+
+Logika:
+
+wczytaj → edytuj → waliduj → zapisz → zgłoś do MZZ.
+
+Wątki: brak.
+
+Integracja z AI: brak bezpośredniej.
+
+Analogicznie definiujemy:
+
+uFormatterRules (FMT-FRM-002, plik formatter_rule.conf)
+
+uFormatterNames (FMT-FRM-003, plik formatter_names.conf)
+
+uFormatterMapRules (FMT-FRM-004, plik formatter_map_rules.conf)
+
+uParserConfig (PAR-FRM-001, pliki .map)
+
+uCompilerConfig (CMP-FRM-001, konfiguracja kompilatora)
+
+uDebuggerMain (DBG-FRM-001)
+
+Każdy z tych modułów:
+
+korzysta z plików,
+
+udostępnia funkcje ładowania/zapisu,
+
+może zgłaszać błędy do MZZ,
+
+nie wysyła danych bezpośrednio do AI.
+
+XI. DRZEWO ZALEŻNOŚCI UNITÓW (LOGICZNE)
+
+uMainMenu
+ ├─ uFormatterConfig (FMT-FRM-001)
+ │    ├─ uFormatterRules (FMT-FRM-002)
+ │    ├─ uFormatterNames (FMT-FRM-003)
+ │    └─ uFormatterMapRules (FMT-FRM-004)
+ ├─ uParserConfig (PAR-FRM-001)
+ ├─ uCompilerConfig (CMP-FRM-001)
+ └─ uDebuggerMain (DBG-FRM-001)
+      └─ uCompilerConfig
+      └─ uMZZ
+
+
+uFormatterConfig, uParserConfig, uCompilerConfig:
+
+zależą od:
+
+uGlobalConfig (obsługa editor_config.json)
+
+uMZZ (Status MZZ)
+
+XII. DRZEWO ZALEŻNOŚCI PROCEDUR (LOGICZNE)
+
+Przykładowo dla Plik → Konfiguracja → Ustawienia Formattera:
+
+MenuClick_KonfiguracjaFormattera
+ └─ ShowFormatterConfigForm
+      ├─ LoadFormatterConfig
+      │    └─ ReadEditorConfig
+      ├─ QueryMZZStatus(pmFormatter)
+      ├─ (użytkownik edytuje)
+      └─ BtnSaveClick
+           ├─ ValidateFormatterFields
+           ├─ SaveFormatterConfig
+           │    └─ WriteEditorConfig
+           └─ NotifyMZZFormatterConfigChanged
+
+
+Dla PAR-FRM-001 (Parser):
+
+MenuClick_UstawieniaParsera
+ └─ ShowParserConfigForm
+      ├─ LoadParserConfig
+      ├─ QueryMZZStatus(pmParser)
+      └─ BtnSaveClick
+           ├─ ValidateParserPaths
+           ├─ SaveParserConfig
+           └─ NotifyMZZParserConfigChanged
+
+
+Dla Kompilator + Debuger:
+
+MenuClick_KonfiguracjaKompilatora
+ └─ ShowCompilerConfigForm
+      └─ ...
+
+MenuClick_Debuger
+ └─ ShowDebuggerMainForm
+      ├─ LoadDebuggerConfig (z uCompilerConfig)
+      ├─ AttachToMZZ
+      └─ StartDebug / StopDebug / Continue / ...
